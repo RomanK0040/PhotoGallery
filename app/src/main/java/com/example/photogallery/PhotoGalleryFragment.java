@@ -1,5 +1,9 @@
 package com.example.photogallery;
 
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -22,11 +26,18 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.photogallery.backgroundprocess.PollJobService;
+
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class PhotoGalleryFragment extends Fragment {
     public static final String TAG = "PhotoGalleryFragment";
+
+    private static final int JOB_ID = 0;
+
+    private JobScheduler mScheduler;
 
     private RecyclerView mPhotoRecyclerView;
     private GridLayoutManager mLayoutManager;
@@ -44,6 +55,8 @@ public class PhotoGalleryFragment extends Fragment {
         setHasOptionsMenu(true);
 
         updateItems();
+
+        mScheduler = (JobScheduler) getActivity().getSystemService(Context.JOB_SCHEDULER_SERVICE);
 
         Handler responseHandler = new Handler();
         mThumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
@@ -123,7 +136,7 @@ public class PhotoGalleryFragment extends Fragment {
         });
 
         MenuItem toggleItem = menu.findItem(R.id.menu_item_toggle_polling);
-        if (PollService.isServiceAlarmOn(getActivity())) {
+        if (QueryPreferences.jobIsScheduled(getActivity())) {
             toggleItem.setTitle(R.string.stop_polling);
         } else {
             toggleItem.setTitle(R.string.start_polling);
@@ -138,8 +151,15 @@ public class PhotoGalleryFragment extends Fragment {
                 updateItems();
                 return true;
             case R.id.menu_item_toggle_polling:
-                boolean shouldStartAlarm = !PollService.isServiceAlarmOn(getActivity());
-                PollService.setServiceAlarm(getActivity(), shouldStartAlarm);
+//                boolean shouldStartAlarm = !PollService.isServiceAlarmOn(getActivity());
+//                PollService.setServiceAlarm(getActivity(), shouldStartAlarm);
+                boolean shouldScheduleJob = !QueryPreferences.jobIsScheduled(getActivity());
+                if (shouldScheduleJob) {
+                    scheduleJob();
+                } else {
+                    cancelJob();
+                }
+                QueryPreferences.setJobScheduled(getActivity(), shouldScheduleJob);
                 getActivity().invalidateOptionsMenu();
                 return true;
             default:
@@ -179,6 +199,23 @@ public class PhotoGalleryFragment extends Fragment {
         protected void onPostExecute(List<GalleryItem> galleryItems) {
             mItems = galleryItems;
             setupAdapter();
+        }
+    }
+
+    private void scheduleJob() {
+        ComponentName serviceName = new ComponentName(getActivity(), PollJobService.class);
+        JobInfo jobInfo = new JobInfo.Builder(JOB_ID, serviceName)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setPeriodic(15 * 60 * 1000)
+                .build();
+
+        mScheduler.schedule(jobInfo);
+    }
+
+    private void cancelJob() {
+        if (mScheduler != null) {
+            mScheduler.cancelAll();
+            mScheduler = null;
         }
     }
 }

@@ -28,7 +28,7 @@ public class PollService extends IntentService {
     private static final long POLL_INTERVAL_MS = TimeUnit.MINUTES.toMillis(1);
     private static final String CHANNEL_ID = "photogallery.services.001";
 
-    public static Intent newIntent(Context context) {
+    private static Intent newIntent(Context context) {
         return new Intent(context, PollService.class);
     }
 
@@ -81,20 +81,7 @@ public class PollService extends IntentService {
         } else {
             Log.i(TAG, "Got a new result: " + resultId);
 
-            Resources resources = getResources();
-            Intent i = PhotoGalleryActivity.newIntent(this);
-            PendingIntent pi = PendingIntent.getActivity(this, 0, i, 0);
-
-            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setSmallIcon(android.R.drawable.ic_menu_report_image)
-                    .setContentTitle(resources.getString(R.string.new_pictures_title))
-                    .setContentText(resources.getString(R.string.new_pictures_text))
-                    .setContentIntent(pi)
-                    .setAutoCancel(true)
-                    .build();
-            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-            notificationManager.notify(0, notification);
-
+            showNotification();
         }
 
         QueryPreferences.setLastResultId(this, resultId);
@@ -121,5 +108,21 @@ public class PollService extends IntentService {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
+    }
+
+    private void showNotification() {
+        Resources resources = getResources();
+        Intent i = PhotoGalleryActivity.newIntent(this);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, i, 0);
+
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_menu_report_image)
+                .setContentTitle(resources.getString(R.string.new_pictures_title))
+                .setContentText(resources.getString(R.string.new_pictures_text))
+                .setContentIntent(pi)
+                .setAutoCancel(true)
+                .build();
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.notify(0, notification);
     }
 }
