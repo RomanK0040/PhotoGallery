@@ -151,8 +151,6 @@ public class PhotoGalleryFragment extends Fragment {
                 updateItems();
                 return true;
             case R.id.menu_item_toggle_polling:
-//                boolean shouldStartAlarm = !PollService.isServiceAlarmOn(getActivity());
-//                PollService.setServiceAlarm(getActivity(), shouldStartAlarm);
                 boolean shouldScheduleJob = !QueryPreferences.jobIsScheduled(getActivity());
                 if (shouldScheduleJob) {
                     scheduleJob();
@@ -206,6 +204,7 @@ public class PhotoGalleryFragment extends Fragment {
         ComponentName serviceName = new ComponentName(getActivity(), PollJobService.class);
         JobInfo jobInfo = new JobInfo.Builder(JOB_ID, serviceName)
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setPersisted(true)
                 .setPeriodic(15 * 60 * 1000)
                 .build();
 
