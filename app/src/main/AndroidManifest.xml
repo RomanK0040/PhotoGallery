@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.photogallery">
+    
+    <permission android:name="com.example.photogallery.PRIVATE"
+        android:protectionLevel="signature" />
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="com.example.photogallery.PRIVATE" />
 
     <application
         android:allowBackup="true"
@@ -20,10 +24,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-<!--        <service android:name=".PollService" />-->
         <service
             android:name=".backgroundprocess.PollJobService"
             android:permission="android.permission.BIND_JOB_SERVICE" />
+        <receiver android:name=".backgroundprocess.NotificationReceiver"
+            android:exported="false">
+            <intent-filter android:priority="-999">
+                <action android:name="com.example.photogallery.backgroundprocess.SHOW_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

@@ -1,5 +1,6 @@
 package com.example.photogallery.backgroundprocess;
 
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -12,7 +13,6 @@ import android.os.Build;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 
 import com.example.photogallery.FlickrFetchr;
 import com.example.photogallery.GalleryItem;
@@ -25,6 +25,12 @@ import java.util.List;
 public class PollJobService extends JobService {
     private static final String TAG = "PollJobService";
     private static final String CHANNEL_ID = "photogallery.services.001";
+
+    public static final String ACTION_SHOW_NOTIFICATION =
+            "com.example.photogallery.backgroundprocess.SHOW_NOTIFICATION";
+    public static final String PERM_PRIVATE = "com.example.photogallery.PRIVATE";
+    public static final String REQUEST_CODE = "REQUEST_CODE";
+    public static final String NOTIFICATION = "NOTIFICATION";
 
     @Override
     public boolean onStartJob(JobParameters params) {
@@ -77,8 +83,9 @@ public class PollJobService extends JobService {
                         Log.i(TAG, "Got an old result: " + resultId);
                     } else {
                         Log.i(TAG, "Got a new result: " + resultId);
+                        Notification notification = createNotification();
+                        showBackgroundNotification(0, notification);
 
-                        showNotification();
                     }
                     QueryPreferences.setLastResultId(getApplicationContext(), resultId);
                 }
@@ -88,7 +95,7 @@ public class PollJobService extends JobService {
         }).start();
     }
 
-    private void showNotification() {
+    private Notification createNotification() {
         Resources resources = getResources();
         Intent i = PhotoGalleryActivity.newIntent(this);
         PendingIntent pi = PendingIntent.getActivity(this, 0, i, 0);
@@ -100,7 +107,16 @@ public class PollJobService extends JobService {
                 .setContentIntent(pi)
                 .setAutoCancel(true)
                 .build();
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        notificationManager.notify(0, notification);
+
+        return notification;
+    }
+
+    private void showBackgroundNotification(int requestCode, Notification notification) {
+        Intent i = new Intent(ACTION_SHOW_NOTIFICATION);
+        i.putExtra(REQUEST_CODE, requestCode);
+        i.putExtra(NOTIFICATION, notification);
+        sendOrderedBroadcast(i, PERM_PRIVATE, null, null,
+                Activity.RESULT_OK, null, null);
+
     }
 }
